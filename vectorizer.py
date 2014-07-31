@@ -249,6 +249,9 @@ class Vectorizer:
     def get_top_nps(self, k=100):
         return self.np_counter.most_common(k)
 
+    def dump_vectors(self, dir='./vectors'):
+        raise NotImplementedError
+
 if __name__ == '__main__':
     v = Vectorizer()
     v.vectorize('resources/sample_data.txt')
