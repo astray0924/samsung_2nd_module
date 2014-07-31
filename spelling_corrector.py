@@ -3,6 +3,7 @@ import re, collections
 class SpellingCorrector:
   def __init__(self):
     self.alphabet = 'abcdefghijklmnopqrstuvwxyz'
+    self.NWORDS = None
 
   def words(self, text):
     return re.findall('[a-z]+', text.lower()) 
@@ -31,5 +32,8 @@ class SpellingCorrector:
     return set(w for w in words if w in self.NWORDS)
 
   def correct(self, word):
+    if not self.NWORDS:
+      raise AttributeError("The corrector must be trained by calling train()")
+
     candidates = self.known([word]) or self.known(self.edits1(word)) or self.known_edits2(word) or [word]
     return max(candidates, key=self.NWORDS.get)
