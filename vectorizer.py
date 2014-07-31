@@ -68,7 +68,7 @@ class Vectorizer:
         self.corrector = SpellingCorrector()
         self.corrector.train()
 
-            # stopword
+        # stopword
         self.stopwords = set(nltk.corpus.stopwords.words('english'))
 
         # Lemmatizer
@@ -89,6 +89,10 @@ class Vectorizer:
             NP:   {<NN.*>+}
         """
         self.np_chunker = nltk.RegexpParser(NP_GRAMMAR)
+
+        # 결과물
+        self.np_vectors = None
+        self.np_counter = None
 
     def pos_sent_to_tuples(self, pos_sent):
         """
@@ -171,8 +175,9 @@ class Vectorizer:
         # 데이터에서 NP 및 feature 추출
         self.tokens = []
         self.np_context = defaultdict(Counter)
+        self.np_counter = Counter()
 
-        for i, line in enumerate(self.data):
+        for i, line in enumerate(self._extract_pattern_sents(self.data)):
             # 해당 줄이 비어있으면 continue
             line = line.strip()
             if not line:
@@ -188,7 +193,8 @@ class Vectorizer:
                 # 언어적 전처리 수행 (ADJ)
                 context = [self.corrector.correct(c.lower()) for c in context]
 
-                # feature 맵 구축
+                # 중간 결과물 저장
+                self.np_counter.update([np])
                 self.np_context[np].update(context)
                 self.tokens += [np]
                 self.tokens += context
@@ -231,14 +237,19 @@ class Vectorizer:
             for np, context in self.np_context_ppmi.iteritems():
                 self.np_vectors[np] = self.vectorizer.transform(context).tocsr() 
 
-        return self.np_vectors
-
     def get_vector(self, np):
-        raise NotImplementedError
+        if self.np_vectors is None:
+            raise AttributeError("You must first vectorize the data by calling vectorize(<data_file>)")
+
+        if np in self.np_vectors:
+            return self.np_vectors[np]
+        else:
+            return None
+
+    def get_top_nps(self, k=100):
+        return self.np_counter.most_common(k)
 
 if __name__ == '__main__':
     v = Vectorizer()
-
-    data = open('resources/sample_data.txt')
-    for line in v._extract_pattern_sents(data):
-        print line
+    v.vectorize('resources/sample_data.txt')
+    print v.get_top_nps()
